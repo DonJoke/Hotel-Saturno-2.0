@@ -1,6 +1,7 @@
 #HERRAMIENTAS DJANGO#
 from django.db import models
 from django.core.exceptions import ValidationError
+from django.core.validators import MinValueValidator#añadimos este imoport para validar que el precio de la habitacion no sea negativo
 
 #vamos a tener 3 modelos,cliente,habitacion y reserva :D 
 #proximamente vamos a implementar un import "from rut_validator import validate_rut" que valida rut
@@ -70,7 +71,7 @@ class habitacion(models.Model):
     numero_habitacion = models.CharField(max_length=10, unique=True)
     piso = models.IntegerField()
     tipo_de_habitacion = models.CharField(max_length=50) #la simple doble o la suittt cpor ejemplox
-    precio_noche = models.DecimalField(max_digits=10, decimal_places=2)
+    precio_noche = models.DecimalField(max_digits=10, decimal_places=2, validators=[MinValueValidator(1, message="El precio por noche debe ser mayor a 0.")])
 
     def __str__(self):
         return f"Habitación {self.numero_habitacion} - {self.tipo_de_habitacion}"
