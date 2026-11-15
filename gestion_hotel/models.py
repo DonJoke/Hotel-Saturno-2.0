@@ -2,10 +2,23 @@
 from django.db import models
 from django.core.exceptions import ValidationError
 from django.core.validators import MinValueValidator#añadimos este imoport para validar que el precio de la habitacion no sea negativo
+from django.utils import timezone # añadimos este import para agregar una funcion y que no agregue reservas en fechas pasadas
+from django.core.validators import RegexValidator#import para que 
+
 
 #vamos a tener 3 modelos,cliente,habitacion y reserva :D 
 #proximamente vamos a implementar un import "from rut_validator import validate_rut" que valida rut
 #solo numeros,con puntos y guion,sin puntos y guion pero que se activa mediante un pip mediante la shell.
+
+#------------------------------------------------------------------------------------------------------------------------------------------------
+#metodo de telefono para no colocar cualquier cosa
+    
+validador_telefono = RegexValidator(
+        regex=r'^\+?56?\s?9?[0-9]{8}$',
+        message="El número de teléfono debe ser válido (Ej: +56912345678 o 912345678)."
+)
+#------------------------------------------------------------------------------------------------------------------------------------------------
+
 #-----------------------------------------------------------------------------------------------------------------------------------------
 #METODO VALIDAR RUT#
 def validar_rut(value):
@@ -60,7 +73,7 @@ class cliente(models.Model):
     nombre = models.CharField(max_length=100)
     # Aplicamos la función validadar_rut al campo RUT
     rut = models.CharField(max_length=12, unique=True, validators=[validar_rut])
-    telefono = models.CharField(max_length=15)
+    telefono = models.CharField(max_length=15,validators=[validador_telefono])
     correo = models.EmailField(unique=True)
 
     def __str__(self):
@@ -87,7 +100,23 @@ class reserva(models.Model):
 #METODOS Y ERRORES DE RESERVA#
     def clean(self):
         super().clean()
-        #aca con este metodo nos aparece el siguiente error:que si la fecha de inicio es mayor entonces falla.
+        
+        
+        hoy = timezone.now().date()
+        #  Valida que la fecha de inicio no sea en el pasado
+        if self.fecha_inicio and self.fecha_inicio < hoy:
+            raise ValidationError({
+                "fecha_inicio": "No se pueden realizar reservas con fecha de inicio en el pasado."
+            })
+
+        #  Valida que la fecha fin sea posterior a la de inicio
+        if self.fecha_inicio and self.fecha_fin and self.fecha_fin <= self.fecha_inicio:
+            raise ValidationError({
+                "fecha_fin": "La fecha de salida debe ser posterior a la fecha de entrada."
+            })
+
+
+       #aca con este metodo nos aparece el siguiente error:que si la fecha de inicio es mayor entonces falla.
         if self.fecha_inicio and self.fecha_fin:
             if self.fecha_inicio >= self.fecha_fin:
                 raise ValidationError("La fecha de inicio debe ser anterior a la fecha de fin.")
@@ -109,3 +138,4 @@ class reserva(models.Model):
 
     def __str__(self):
         return f"Reserva #{self.id} - {self.cliente.nombre} (Hab. {self.habitacion.numero_habitacion})"
+    

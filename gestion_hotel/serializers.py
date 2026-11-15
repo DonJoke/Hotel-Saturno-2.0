@@ -27,7 +27,7 @@ class ReservaSerializer(serializers.ModelSerializer):
             instancia = reserva(**attrs)
 
         try:
-            instancia.clean()
+            instancia.full_clean()
         except DjangoValidationError as e:
             raise serializers.ValidationError(
                 e.message_dict if hasattr(e, 'message_dict') else list(e.messages)
